@@ -1,0 +1,67 @@
+https://developer.aliyun.com/article/716908
+Domain Primitive 的定义
+Domain Primitive 是一个在特定领域里，拥有精准定义的、可自我验证的、拥有行为的 Value Object 。
+
+DP是一个传统意义上的Value Object，拥有Immutable的特性
+DP是一个完整的概念整体，拥有精准定义
+DP使用业务域中的原生语言
+DP可以是业务域的最小组成部分、也可以构建复杂组合
+注：Domain Primitive的概念和命名来自于Dan Bergh Johnsson & Daniel Deogun的书 Secure by Design。
+
+▍使用 Domain Primitive 的三原则
+
+让隐性的概念显性化
+让隐性的上下文显性化
+封装多对象行为
+
+
+
+DP 的第一个原则：将隐性的概念显性化
+假如一个方法有 N 个参数，每个参数有 M 个校验逻辑，至少要有 N * M 个 TC 。
+而假设有 P 个方法中都用到了 phone 这个字段，这 P 个方法都需要对该字段进行测试，也就是说整体需要：
+P N M
+个测试用例才能完全覆盖所有数据验证的问题，在日常项目中，这个测试的成本非常之高，导致大量的代码没被覆盖到。而没被测试覆盖到的代码才是最有可能出现问题的地方。
+
+在这个情况下，降低测试成本 == 提升代码质量，如何能够降低测试的成本呢？
+
+
+
+当我们将 PhoneNumber 抽取出来之后，在来看测试的 TC ：
+
+首先 PhoneNumber 本身还是需要 M 个测试用例，但是由于我们只需要测试单一对象，每个用例的代码量会大大降低，维护成本降低。
+每个方法里的每个参数，现在只需要覆盖为 null 的情况就可以了，其他的 case 不可能发生（因为只要不是 null 就一定是合法的）
+所以，单个方法的 TC 从原来的 N * M 变成了今天的 N + M 。同样的，多个方法的 TC 数量变成了
+
+N + M + P
+
+这个数量一般来说要远低于原来的数量 N M P ，让测试成本极大的降低。
+
+
+评估3 - 业务代码的清晰度
+胶水代码:
+    从入参截取出一部分数据, 把这部分数据当入参调用外部方法获取新数据.
+缺点:
+    不可复用,  不清晰, 不可单独测试造成测试TC过高
+
+    而为了复用以下示例的方法，可能会抽离出一个静态工具类 PhoneUtils 。
+    但是这里要思考的是，静态工具类是否是最好的实现方式呢？当你的项目里充斥着大量的静态工具类，业务代码散在多个文件当中时，你是否还能找到核心的业务逻辑呢？
+示例:
+    public test(int phone){
+        // 截取新入参
+        String prefix = phone.substring(0, 3);
+        //获得新数据
+        salesRepRepo.findRep(areaCode);
+    }
+修改:
+    抽出DP: PhoneNumber.java
+    public class PhoneNumber{
+            findAreaCode(int phone){
+                return phone.substring(0, 3);
+            }
+        }
+优点:
+    清晰度更高, 因为该方法在原始域对象中.
+    可复用, 因为该方法在原始域对象中, 方便查找和使用.
+    可测试, 因为只需要单独对PhoneNumber进行测试, 而不用在每个用到phone的方法中都测试, TC大大降低.
+
+
